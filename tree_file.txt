@@ -1,0 +1,2 @@
+Your tree is:
+(Is animal (Cat nil nil) (Is plant (Flower nil nil) (Bla-bla-bla nil nil)))
