@@ -13,11 +13,13 @@
             }                                                           \
         }
 
-#define TREE_DUMP_AND_RETURN_ERRORS(error, ...)                   \
-        {                                                         \
-            Tree_status now_error = error;                        \
-            TreeHTMLDump(tree, DUMP_INFO, ERROR_DUMP, now_error); \
-            return now_error;                                     \
+#define TREE_DUMP_AND_RETURN_ERRORS(error, ...)                       \
+        {                                                             \
+            Tree_status now_error = error;                            \
+            if (now_error != SUCCESS) {                               \
+                TreeHTMLDump(tree, DUMP_INFO, ERROR_DUMP, now_error); \
+                return now_error;                                     \
+            }                                                         \
         }
 
 #define DUMP_INFO __LINE__, __FILE__

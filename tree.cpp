@@ -40,15 +40,10 @@ Tree_status NodeCtor(Tree* tree, Tree_node** new_node, const_type_t* info) {
     if (*new_node == NULL)
         TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
 
-    type_t new_info = (type_t)calloc(strlen(info) + 2, sizeof(char));
-    if (new_info == NULL)
-        TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY,     free(*new_node));
-
     if ((*new_node)->info != NULL)
         free((*new_node)->info);
 
-    strcpy(new_info, info);
-    (*new_node)->info = new_info;
+    (*new_node)->info = strdup(info);
 
     (*new_node)->left_node = NULL;
     (*new_node)->right_node = NULL;
@@ -121,15 +116,10 @@ Tree_status NodeInsertAtTheEnd(Tree* tree, Tree_node** node, const_type_t* answe
     left_new_node->parent  = *node;
     right_new_node->parent = *node;
 
-    type_t new_info = (type_t)calloc(strlen(question) + 2, sizeof(char));
-    if (new_info == NULL) 
-        TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
-
     if ((*node)->info != NULL)
         free((*node)->info);
 
-    strcpy(new_info, question);
-    (*node)->info = new_info;
+    (*node)->info = strdup(question);
 
     TREE_CHECK_AND_RETURN_ERRORS(TreeHTMLDump(tree, DUMP_INFO, NOT_ERROR_DUMP));
 
@@ -232,7 +222,7 @@ Tree_status TreeHTMLDump(Tree* tree, int line, const char* file, Type_dump type_
         TREE_CHECK_AND_RETURN_ERRORS(EXECUTION_FAILED,      fprintf(tree->Dump_Info.dump_file, "Error with create image:(\n"));
 
     fprintf(tree->Dump_Info.dump_file, "\n");
-    fprintf(tree->Dump_Info.dump_file, "<img src = %s/images/image%d.png width = 500px>", tree->Dump_Info.directory, tree->Dump_Info.num_dump);
+    fprintf(tree->Dump_Info.dump_file, "<img src = %s/images/image%d.png width = 700px>", tree->Dump_Info.directory, tree->Dump_Info.num_dump);
 
     fprintf(tree->Dump_Info.dump_file, "\n\n");
 
@@ -272,12 +262,12 @@ void PrintNodeToDot(Tree* tree, FILE *file, Tree_node* tree_node) {
     assert(tree_node);
 
     if (tree_node == tree->root)
-        fprintf(file, "    node_%p [fillcolor = \"#de86f5ff\", label=<{%p | %s | left = %p | right = %p}>];\n", 
-                      (void *)tree_node, tree_node, tree_node->info, tree_node->left_node, tree_node->right_node);
+        fprintf(file, "    node_%p [fillcolor = \"#de86f5ff\", label=<{%p | %s | parent = %p | left = %p | right = %p}>];\n", 
+                      (void *)tree_node, tree_node, tree_node->info, tree_node->parent, tree_node->left_node, tree_node->right_node);
 
     else {
-        fprintf(file, "    node_%p [label=\"{%p | %s | left = %p | right = %p}\"];\n", 
-                      (void *)tree_node, tree_node, tree_node->info, tree_node->left_node, tree_node->right_node);
+        fprintf(file, "    node_%p [label=\"{%p | %s | parent = %p | left = %p | right = %p}\"];\n", 
+                      (void *)tree_node, tree_node, tree_node->info, tree_node->parent, tree_node->left_node, tree_node->right_node);
     }
 
     if (tree_node->left_node) {
