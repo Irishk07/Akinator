@@ -1,0 +1,1 @@
+("Is animal" ("Is dog" ("Is small" ("Chihuahua" nil nil) ("Pudel" nil nil)) ("Cat" nil nil)) ("Is plant" ("Flower" nil nil) ("Is tree" ("Dub" nil nil) ("Bla-bla-bla" nil nil))))

@@ -55,7 +55,7 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node);
 
 Tree_status PathToCharacter(Akinator* akinator);
 
-Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack);
+Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack, char* character);
 
 Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character);
 

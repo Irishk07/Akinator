@@ -180,19 +180,25 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node) {
 Tree_status PathToCharacter(Akinator* akinator) {
     color_printf(COLOR_PURPLE, " - Enter name of the character\n");
 
+    char* character = ReadAnswer();
+    if (character == NULL)
+        TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
+
     stack_t stack = {};
 
-    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &stack));
+    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &stack, character));
 
     color_printf(COLOR_GREEN, " - Path to your character:\n");
 
     size_t cnt_connecting_words = sizeof(connecting_words) / sizeof(connecting_words[0]);
+
+    color_printf(COLOR_GREEN, " --- %s:", character);
     
     Tree_node* cur_node = akinator->tree.root;
     if (stack.data[0] == LEFT)
-        color_printf(COLOR_GREEN, " --- %s", cur_node->info);
+        color_printf(COLOR_GREEN, " %s", cur_node->info);
     else
-        color_printf(COLOR_GREEN, " --- Not %s", cur_node->info);
+        color_printf(COLOR_GREEN, "Not %s", cur_node->info);
 
     MoveToNextNode(&stack, 0, &cur_node);
 
@@ -212,25 +218,21 @@ Tree_status PathToCharacter(Akinator* akinator) {
 
     StackDtor(&stack);
 
+    free(character);
+
     EndAkinator(akinator);
 
     return SUCCESS;
 }
 
-Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack) {
+Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack, char* character) {
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
-
-    char* character = ReadAnswer();
-    if (character == NULL)
-        TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
 
     StackCtor(stack, DEFAULT_START_CAPACITY);
 
     Tree_node* result = FindCharacter(stack, akinator->tree.root, character);
     if (result == NULL)
         return CHARACTER_NOT_FIND;
-
-    free(character);
 
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
 
@@ -266,12 +268,18 @@ Tree_status CompareTwoCharacters(Akinator* akinator) {
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree));
 
     color_printf(COLOR_PURPLE, " - Enter name of the first character\n");
+    char* first_character = ReadAnswer();
+    if (first_character == NULL)
+        TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
     stack_t first_stack = {};
-    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &first_stack));
+    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &first_stack, first_character));
 
     color_printf(COLOR_PURPLE, " - Enter name of the second character\n");
+    char* second_character = ReadAnswer();
+    if (second_character == NULL)
+        TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
     stack_t second_stack = {};
-    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &second_stack));
+    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &second_stack, second_character));
 
     color_printf(COLOR_GREEN, " - Now you can see common signs: ");
 
