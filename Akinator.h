@@ -40,6 +40,9 @@ struct Akinator {
 };
 
 
+const char* const connecting_words[] = {"so", "more than that", "also", "in addition", "besides"};
+
+
 Tree_status AkinatorCtor(Akinator* akinator, const char *dump_filename, const char *directory);
 
 Tree_status StartAkinator(Akinator* akinator);
@@ -52,7 +55,15 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node);
 
 Tree_status PathToCharacter(Akinator* akinator);
 
+Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack);
+
 Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character);
+
+Tree_status CompareTwoCharacters(Akinator* akinator);
+
+void PrintCurNode(stack_t* stack, size_t index, Tree_node* cur_node);
+
+void MoveToNextNode(stack_t* stack, size_t index, Tree_node** cur_node);
 
 Tree_status SaveTree(Akinator* akinator);
 

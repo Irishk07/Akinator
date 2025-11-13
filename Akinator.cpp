@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,12 +101,12 @@ Tree_status ChooseOption(Akinator* akinator) {
     type_options option = ReadSelectedOption();
 
     switch (option) {
-        case ONE:  DO_CASE(PlayAkinator(akinator, akinator->tree.root));
-        case TWO: DO_CASE(PathToCharacter(akinator));
-        // case THREE: DO_CASE(PathToCharacter(akinator));
-        case FOUR: DO_CASE(SaveTree(akinator));
-        case FIVE: DO_CASE(UploadTree(akinator));
-        case SIX:  DO_CASE(EndAkinator(akinator));
+        case ONE:   DO_CASE(PlayAkinator(akinator, akinator->tree.root));
+        case TWO:   DO_CASE(PathToCharacter(akinator));
+        case THREE: DO_CASE(CompareTwoCharacters(akinator));
+        case FOUR:  DO_CASE(SaveTree(akinator));
+        case FIVE:  DO_CASE(UploadTree(akinator));
+        case SIX:   DO_CASE(EndAkinator(akinator));
         case WRONG_OPTION: TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
         default: break;
     }
@@ -177,45 +178,61 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node) {
 }
 
 Tree_status PathToCharacter(Akinator* akinator) {
-    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
-
     color_printf(COLOR_PURPLE, " - Enter name of the character\n");
+
+    stack_t stack = {};
+
+    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &stack));
+
+    color_printf(COLOR_GREEN, " - Path to your character:\n");
+
+    size_t cnt_connecting_words = sizeof(connecting_words) / sizeof(connecting_words[0]);
+    
+    Tree_node* cur_node = akinator->tree.root;
+    if (stack.data[0] == LEFT)
+        color_printf(COLOR_GREEN, " --- %s", cur_node->info);
+    else
+        color_printf(COLOR_GREEN, " --- Not %s", cur_node->info);
+
+    MoveToNextNode(&stack, 0, &cur_node);
+
+    for (size_t i = 1; i < stack.size; ++i) {
+        size_t num_of_word = (size_t)rand() % cnt_connecting_words;
+
+        color_printf(COLOR_GREEN, ", %s", connecting_words[num_of_word]);
+
+        if (stack.data[i] == LEFT)
+            color_printf(COLOR_GREEN, " %s", cur_node->info);
+        else if (stack.data[i] == RIGHT)
+            color_printf(COLOR_GREEN, " Not %s", cur_node->info);
+
+        MoveToNextNode(&stack, i, &cur_node);
+    }
+    color_printf(COLOR_GREEN, "\n");
+
+    StackDtor(&stack);
+
+    EndAkinator(akinator);
+
+    return SUCCESS;
+}
+
+Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
 
     char* character = ReadAnswer();
     if (character == NULL)
         TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
 
-    stack_t stack = {};
-    StackCtor(&stack, DEFAULT_START_CAPACITY);
+    StackCtor(stack, DEFAULT_START_CAPACITY);
 
-    Tree_node* result = FindCharacter(&stack, akinator->tree.root, character);
+    Tree_node* result = FindCharacter(stack, akinator->tree.root, character);
     if (result == NULL)
         return CHARACTER_NOT_FIND;
 
-    color_printf(COLOR_GREEN, " - Path to your character:\n");
-    color_printf(COLOR_GREEN, " --- Pointer on your character: %p\n", result);
-    
-    Tree_node* cur_node = akinator->tree.root;
-    color_printf(COLOR_GREEN, " --- %s ", cur_node->info);
-    for (int i = 0; i < (int)stack.size; ++i) {
-        if (stack.data[i] == LEFT) {
-            color_printf(COLOR_GREEN, "-> %s ", cur_node->left_node->info);
-            cur_node = cur_node->left_node;
-        }
-        else if (stack.data[i] == RIGHT) {
-            color_printf(COLOR_GREEN, "-> %s ", cur_node->right_node->info);
-            cur_node = cur_node->right_node;
-        }
-    }
-    color_printf(COLOR_GREEN, "\n");
-
     free(character);
 
-    StackDtor(&stack);
-
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
-
-    EndAkinator(akinator);
 
     return SUCCESS;
 }
@@ -243,6 +260,80 @@ Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character)
     StackPop(stack, NULL);
 
     return NULL;
+}
+
+Tree_status CompareTwoCharacters(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree));
+
+    color_printf(COLOR_PURPLE, " - Enter name of the first character\n");
+    stack_t first_stack = {};
+    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &first_stack));
+
+    color_printf(COLOR_PURPLE, " - Enter name of the second character\n");
+    stack_t second_stack = {};
+    TREE_CHECK_AND_RETURN_ERRORS(DefinitionOfCharacter(akinator, &second_stack));
+
+    color_printf(COLOR_GREEN, " - Now you can see common signs: ");
+
+    size_t both_size = (first_stack.size > second_stack.size) ? second_stack.size : first_stack.size;
+    size_t cur_size = 0;
+
+    Tree_node* cur_node = akinator->tree.root;
+    for (; cur_size < both_size; ++cur_size) {
+        if (first_stack.data[cur_size] != second_stack.data[cur_size]) {
+            break;
+        }
+
+        PrintCurNode(&first_stack, cur_size, cur_node);
+
+        MoveToNextNode(&first_stack, cur_size, &cur_node);
+    }
+    printf("\n");
+
+    fprintf(stderr, "%zu\n", cur_size);
+
+    Tree_node* cur_node_first = cur_node;
+    Tree_node* cur_node_second = cur_node;
+
+    color_printf(COLOR_GREEN, " - Now you can see diffrent signs:\n");
+    color_printf(COLOR_GREEN, " - First character has such signs: ");
+    for (size_t i = cur_size; i < first_stack.size; ++i) {
+        PrintCurNode(&first_stack, i, cur_node_first);
+
+        MoveToNextNode(&first_stack, i, &cur_node_first);
+    }
+    printf("\n");
+
+    fprintf(stderr, "%zu\n", cur_size);
+
+    color_printf(COLOR_GREEN, " - Second character has such signs: ");
+    for (size_t i = cur_size; i < second_stack.size; ++i) {
+        PrintCurNode(&second_stack, i, cur_node_second);
+
+        MoveToNextNode(&second_stack, i, &cur_node_second);
+    }
+    printf("\n");
+
+    StackDtor(&first_stack);
+    StackDtor(&second_stack);
+
+    EndAkinator(akinator);
+
+    return SUCCESS;
+}
+
+void PrintCurNode(stack_t* stack, size_t index, Tree_node* cur_node) {
+    if (stack->data[index] == LEFT)
+        color_printf(COLOR_GREEN, "%s, ", cur_node->info);
+    else if (stack->data[index] == RIGHT)
+        color_printf(COLOR_GREEN, "Not %s, ", cur_node->info);
+}
+
+void MoveToNextNode(stack_t* stack, size_t index, Tree_node** cur_node) {
+    if (stack->data[index] == LEFT)
+        *cur_node = (*cur_node)->left_node;
+    else if (stack->data[index] == RIGHT)
+        *cur_node = (*cur_node)->right_node;
 }
 
 Tree_status SaveTree(Akinator* akinator) {
@@ -305,11 +396,12 @@ Tree_status ReadTree(Akinator* akinator, const char* file_with_tree) {
 
     char* new_tree = NULL;
     size_t buffer_size = 0;
-    if (getline(&new_tree, &buffer_size, file) == -1) {
+    ssize_t res = getline(&new_tree, &buffer_size, file);
+    if (res == -1) {
         TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
     }
 
-    akinator->size_buffer  = buffer_size;
+    akinator->size_buffer  = (size_t)res;
     akinator->begin_buffer = new_tree;
     akinator->end_buffer   = akinator->begin_buffer + akinator->size_buffer;
 
