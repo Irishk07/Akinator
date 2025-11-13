@@ -2,6 +2,7 @@
 #define AKINATOR_H_
 
 #include "tree.h"
+#include "stack.h"
 
 
 const int DEFAULT_SIZE = 128;
@@ -22,6 +23,11 @@ enum type_options {
     FIVE         = 5,
     SIX          = 6,
     WRONG_OPTION = 7
+};
+
+enum type_path {
+    LEFT  = 0,
+    RIGHT = 1,
 };
 
 
@@ -46,7 +52,7 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node);
 
 Tree_status PathToCharacter(Akinator* akinator);
 
-Tree_node* FindCharacter(Tree_node* tree_node, type_t character);
+Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character);
 
 Tree_status SaveTree(Akinator* akinator);
 

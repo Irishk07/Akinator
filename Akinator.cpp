@@ -6,6 +6,7 @@
 
 #include "colors.h"
 #include "tree.h"
+#include "stack.h"
 
 
 Tree_status AkinatorCtor(Akinator* akinator, const char *dump_filename, const char *directory) {
@@ -91,12 +92,12 @@ Tree_status ChooseOption(Akinator* akinator) {
 
     switch (option) {
         case ONE:  DO_CASE(PlayAkinator(akinator, akinator->tree.root));
-        // case TWO: DO_CASE();
-        // case THREE: DO_CASE();
+        case TWO: DO_CASE(PathToCharacter(akinator));
+        // case THREE: DO_CASE(PathToCharacter(akinator));
         case FOUR: DO_CASE(SaveTree(akinator));
         case FIVE: DO_CASE(UploadTree(akinator));
         case SIX:  DO_CASE(EndAkinator(akinator));
-        case WRONG_ANSWER: TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
+        case WRONG_OPTION: TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
         default: break;
     }
 
@@ -164,40 +165,73 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node) {
     return SUCCESS;
 }
 
-// Tree_status PathToCharacter(Tree* tree) {
-//     color_printf(COLOR_PURPLE, " - Enter name of the character\n");
+Tree_status PathToCharacter(Akinator* akinator) {
+    color_printf(COLOR_PURPLE, " - Enter name of the character\n");
 
-//     char character[100] = {}; //FIXME
-//     if (scanf("%s[^\n]%*c", character) != 1) 
-//         return READ_ERROR;
+    char* character = ReadAnswer();
+    if (character == NULL)
+        TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
 
-//     Tree_node* result = FindCharacter(tree->root, character);
-//     if (result == NULL)
-//         return CHARACTER_NOT_FIND;
+    stack_t stack = {};
+    StackCtor(&stack, DEFAULT_START_CAPACITY);
 
-//     color_printf(COLOR_GREEN, "Path to your character:\n");
+    Tree_node* result = FindCharacter(&stack, akinator->tree.root, character);
+    if (result == NULL)
+        return CHARACTER_NOT_FIND;
 
-//     while (result != tree->root) {
-//         printf("%s -> ", result->info);
-//         result = result->parent;
-//     }
-//     printf("%s", result->info);
+    color_printf(COLOR_GREEN, " - Path to your character:\n");
+    color_printf(COLOR_GREEN, " --- Pointer on your character: %p\n", result);
 
-//     return SUCCESS;
-// }
+    // for (int i = 0; i < stack.size; ++i) {
+    //     fprintf(stderr, "%d ", stack.data[i]);
+    // }
+    // fprintf(stderr, "\n");
+    
+    Tree_node* cur_node = akinator->tree.root;
+    color_printf(COLOR_GREEN, " --- %s ", cur_node->info);
+    for (int i = 0; i < (int)stack.size; ++i) {
+        if (stack.data[i] == LEFT) {
+            color_printf(COLOR_GREEN, "-> %s ", cur_node->left_node->info);
+            cur_node = cur_node->left_node;
+        }
+        else if (stack.data[i] == RIGHT) {
+            color_printf(COLOR_GREEN, "-> %s ", cur_node->right_node->info);
+            cur_node = cur_node->right_node;
+        }
+    }
+    color_printf(COLOR_GREEN, "\n");
 
-// Tree_node* FindCharacter(Tree_node* tree_node, type_t character) {
-//     if (strcmp(tree_node->info, character) == 0)
-//         return tree_node;
+    free(character);
 
-//     if (tree_node->left_node)
-//         return FindCharacter(tree_node->left_node, character);
+    StackDtor(&stack);
 
-//     if (tree_node->right_node)
-//         return FindCharacter(tree_node->right_node, character);
+    return SUCCESS;
+}
 
-//     return NULL;
-// }
+Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character) {
+    if (tree_node == NULL)
+        return NULL;
+
+    if (strcmp(tree_node->info, character) == 0)
+        return tree_node;
+
+    Tree_node* result = NULL;
+    StackPush(stack, LEFT);
+    if (tree_node->left_node)
+        result = FindCharacter(stack, tree_node->left_node, character);
+    if (result != NULL)
+        return result;
+    StackPop(stack, NULL);
+
+    StackPush(stack, RIGHT);
+    if (tree_node->right_node)
+        result = FindCharacter(stack, tree_node->right_node, character);
+    if (result != NULL)
+        return result;
+    StackPop(stack, NULL);
+
+    return NULL;
+}
 
 Tree_status SaveTree(Akinator* akinator) {
     color_printf(COLOR_PURPLE, " - Please, enter the name of the file where the tree will be saved\n");

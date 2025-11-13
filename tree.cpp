@@ -30,7 +30,7 @@ Tree_status NodeCtor(Tree* tree, Tree_node** new_node, Tree_node* parent) { // T
 
     *new_node = (Tree_node*)calloc(1, sizeof(Tree_node));
     if (*new_node == NULL)
-        TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
+        TREE_CHECK_AND_RETURN_ERRORS(MEMORY_ERROR);
 
     (*new_node)->left_node = NULL;
     (*new_node)->right_node = NULL;
@@ -67,12 +67,12 @@ Tree_status FillNodeInfo(Tree_node* tree_node, const_type_t info) {
     tree_node->info = strdup(info);
 
     if (tree_node->info == NULL)
-        TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
+        TREE_CHECK_AND_RETURN_ERRORS(MEMORY_ERROR);
 
             // another variant
             // type_t new_info = (type_t)calloc(strlen(question) + 2, sizeof(char));
             // if (new_info == NULL) 
-            //     TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
+            //     TREE_CHECK_AND_RETURN_ERRORS(MEMORY_ERROR);
         
             // if ((*node)->info != NULL)
             //     free((*node)->info);
@@ -196,7 +196,7 @@ void PrintTreeToFile(Tree_node* tree_node, FILE* stream) {
 }
 
 void SkipSpaces(char** buffer) {
-    while (isspace(**buffer))
+    while (isspace(**buffer) && (**buffer) != '\0')
         (*buffer)++;
 }
 
@@ -327,7 +327,7 @@ void PrintErrors(int error, FILE* stream) {
     if (error == SUCCESS                  ) fprintf(stream, "ALL_RIGHT\n");
     if (error == NULL_POINTER_ON_TREE     ) fprintf(stream, "Null pointer on tree\n");
     if (error == NULL_POINTER_ON_NODE     ) fprintf(stream, "Null pointer on node\n");
-    if (error == NOT_ENOUGH_MEMORY        ) fprintf(stream, "Not enough memory\n");
+    if (error == MEMORY_ERROR        ) fprintf(stream, "Not enough memory\n");
     if (error == OPEN_ERROR               ) fprintf(stream, "Open error\n");
     if (error == CLOSE_ERROR              ) fprintf(stream, "Close error\n");
     if (error == EXECUTION_FAILED         ) fprintf(stream, "Execution failed\n");

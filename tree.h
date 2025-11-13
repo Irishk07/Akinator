@@ -54,7 +54,7 @@ struct Tree {
 
 enum Tree_status {
     SUCCESS                  = 0,
-    NOT_ENOUGH_MEMORY        = 1,
+    MEMORY_ERROR             = 1,
     OPEN_ERROR               = 2,
     EXECUTION_FAILED         = 3,
     CLOSE_ERROR              = 4,
