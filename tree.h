@@ -67,7 +67,8 @@ enum Tree_status {
     WRONG_ROOT               = 11,
     WRONG_NODE               = 12,
     CHARACTER_NOT_FIND       = 13,
-    SYNTAX_ERROR             = 14
+    SYNTAX_ERROR             = 14,
+    BUFFER_OVERFLOW          = 15
 };
 
 enum Type_dump {

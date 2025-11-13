@@ -54,6 +54,8 @@ Tree_status CreateRoot(Tree* tree, const_type_t info) {
     tree->root->right_node = NULL;
     tree->root->parent     = NULL;
 
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(tree)); 
+
     return SUCCESS;
 }
 

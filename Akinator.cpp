@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,10 @@
 
 
 Tree_status AkinatorCtor(Akinator* akinator, const char *dump_filename, const char *directory) {
+    assert(akinator);
+    assert(dump_filename);
+    assert(directory);
+
     akinator->tree = {};
     TREE_CHECK_AND_RETURN_ERRORS(TreeCtor(&akinator->tree, dump_filename, directory));
     // TREE_CHECK_AND_RETURN_ERRORS(CreateRoot(&akinator->tree, "Bla-bla-bla"));
@@ -22,6 +27,8 @@ Tree_status AkinatorCtor(Akinator* akinator, const char *dump_filename, const ch
 }
 
 Tree_status StartAkinator(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_PURPLE, " - Hello, friend!\n");
 
     color_printf(COLOR_PURPLE, " - Are you ready to start game?\n");
@@ -42,7 +49,7 @@ Tree_status StartAkinator(Akinator* akinator) {
 
     color_printf(COLOR_PURPLE, " - Let's gooooooo\n");
 
-    TREE_CHECK_AND_RETURN_ERRORS(ChooseOption(akinator));
+    TREE_CHECK_AND_RETURN_ERRORS(ChooseOption(akinator)); 
     
     return SUCCESS;
 }
@@ -80,6 +87,8 @@ type_answer GetAnswerYesNo() {
         break;
 
 Tree_status ChooseOption(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_YELLOW, " - Please, chose option:\n");
     color_printf(COLOR_YELLOW, "   [1] Guess a character\n");
     color_printf(COLOR_YELLOW, "   [2] Printf path to the character\n");
@@ -100,6 +109,8 @@ Tree_status ChooseOption(Akinator* akinator) {
         case WRONG_OPTION: TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
         default: break;
     }
+
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
 
     return SUCCESS;
 }
@@ -166,6 +177,8 @@ Tree_status PlayAkinator(Akinator* akinator, Tree_node* cur_node) {
 }
 
 Tree_status PathToCharacter(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_PURPLE, " - Enter name of the character\n");
 
     char* character = ReadAnswer();
@@ -181,11 +194,6 @@ Tree_status PathToCharacter(Akinator* akinator) {
 
     color_printf(COLOR_GREEN, " - Path to your character:\n");
     color_printf(COLOR_GREEN, " --- Pointer on your character: %p\n", result);
-
-    // for (int i = 0; i < stack.size; ++i) {
-    //     fprintf(stderr, "%d ", stack.data[i]);
-    // }
-    // fprintf(stderr, "\n");
     
     Tree_node* cur_node = akinator->tree.root;
     color_printf(COLOR_GREEN, " --- %s ", cur_node->info);
@@ -204,6 +212,10 @@ Tree_status PathToCharacter(Akinator* akinator) {
     free(character);
 
     StackDtor(&stack);
+
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
+    EndAkinator(akinator);
 
     return SUCCESS;
 }
@@ -234,6 +246,8 @@ Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character)
 }
 
 Tree_status SaveTree(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_PURPLE, " - Please, enter the name of the file where the tree will be saved\n");
 
     char* file_name = ReadAnswer();
@@ -248,12 +262,16 @@ Tree_status SaveTree(Akinator* akinator) {
 
     free(file_name);
 
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     EndAkinator(akinator);
 
     return SUCCESS;
 }
 
 Tree_status UploadTree(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_PURPLE, " - Please, enter the name of the file from which the tree will be uploaded\n");
 
     char* file_name = ReadAnswer();
@@ -269,6 +287,8 @@ Tree_status UploadTree(Akinator* akinator) {
     TreeHTMLDump(&akinator->tree, akinator->tree.root, DUMP_INFO, NOT_ERROR_DUMP);
 
     free(file_name);
+
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
 
     EndAkinator(akinator);
 
@@ -291,6 +311,7 @@ Tree_status ReadTree(Akinator* akinator, const char* file_with_tree) {
 
     akinator->size_buffer  = buffer_size;
     akinator->begin_buffer = new_tree;
+    akinator->end_buffer   = akinator->begin_buffer + akinator->size_buffer;
 
     akinator->tree.root = NULL;
     TREE_CHECK_AND_RETURN_ERRORS(ReadNode(akinator, &akinator->tree.root, &new_tree, NULL));
@@ -300,12 +321,15 @@ Tree_status ReadTree(Akinator* akinator, const char* file_with_tree) {
     return SUCCESS;
 }
 
-#define DUMP_CURRENT_SITUATION(tree, tree_node, current_pos)                          \
-    TreeHTMLDump(&tree, tree_node, DUMP_INFO, NOT_ERROR_DUMP);                          \
+#define DUMP_CURRENT_SITUATION(tree, tree_node, current_pos)                        \
+    TreeHTMLDump(&tree, tree_node, DUMP_INFO, NOT_ERROR_DUMP);                      \
     fprintf(tree.dump_info.dump_file, "Current situation: \":%s\"\n", *current_pos);
 
-Tree_status ReadNode(Akinator* akinator, Tree_node** tree_node, char** current_pos, Tree_node* parent) {
+Tree_status ReadNode(Akinator* akinator, Tree_node** tree_node, char** current_pos, Tree_node* parent) {    
     SkipSpaces(current_pos);
+
+    if (*current_pos > akinator->end_buffer)
+        TREE_CHECK_AND_RETURN_ERRORS(BUFFER_OVERFLOW);
 
     if (**current_pos == '(') {
         NodeCtor(&akinator->tree, tree_node, parent);
@@ -352,6 +376,8 @@ Tree_status ReadNode(Akinator* akinator, Tree_node** tree_node, char** current_p
 #undef DUMP_CURRENT_SITUATION
 
 Tree_status EndAkinator(Akinator* akinator) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_PURPLE, " - So, our game is over. Do you want to continue?\n");
 
     type_answer answer = GetAnswerYesNo();
@@ -369,6 +395,8 @@ Tree_status EndAkinator(Akinator* akinator) {
     if (answer == NO)
         color_printf(COLOR_PURPLE, " - Bye-bye\n");
 
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     return SUCCESS;
 }
 
@@ -385,6 +413,8 @@ type_answer GiveAndCheckMyAnswer(Tree_node* cur_node) {
 }
 
 Tree_status AskAndAddRightAnswer(Akinator* akinator, Tree_node* cur_node) {
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
+
     color_printf(COLOR_CYAN, " - What is the right answer?\n");
 
     char* right_answer = ReadAnswer();
@@ -406,6 +436,8 @@ Tree_status AskAndAddRightAnswer(Akinator* akinator, Tree_node* cur_node) {
 
     free(right_answer);
     free(difference);
+
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree)); 
 
     return SUCCESS;
 }
