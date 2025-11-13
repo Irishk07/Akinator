@@ -13,13 +13,13 @@
             }                                                           \
         }
 
-#define TREE_DUMP_AND_RETURN_ERRORS(error, ...)                       \
-        {                                                             \
-            Tree_status now_error = error;                            \
-            if (now_error != SUCCESS) {                               \
-                TreeHTMLDump(tree, DUMP_INFO, ERROR_DUMP, now_error); \
-                return now_error;                                     \
-            }                                                         \
+#define TREE_DUMP_AND_RETURN_ERRORS(error, ...)                            \
+        {                                                                        \
+            Tree_status now_error = error;                                       \
+            if (now_error != SUCCESS) {                                          \
+                TreeHTMLDump(tree, tree->root, DUMP_INFO, ERROR_DUMP, now_error); \
+                return now_error;                                                \
+            }                                                                    \
         }
 
 #define DUMP_INFO __LINE__, __FILE__
@@ -27,11 +27,10 @@
 
 
 typedef char* type_t;
-typedef const char const_type_t;
-
+typedef const char* const_type_t;
 
 const int MAX_LEN_NAME = 100;
-
+const int LEN_NIL      = 3;
 
 struct Tree_node {
     type_t info;
@@ -40,7 +39,7 @@ struct Tree_node {
     Tree_node* parent;
 };
 
-struct Dump_Information {
+struct Dump_information {
     FILE* dump_file;
     const char* directory;
     int num_dump = 0;
@@ -49,8 +48,7 @@ struct Dump_Information {
 struct Tree {
     Tree_node* root;
     size_t size;
-    Dump_Information Dump_Info;
-    const char* name_file_with_tree;
+    Dump_information dump_info;
 };
 
 
@@ -67,7 +65,9 @@ enum Tree_status {
     NULL_POINTER_ON_NODE     = 9,
     PARENT_AND_CHILD_UNEQUAL = 10,
     WRONG_ROOT               = 11,
-    WRONG_NODE               = 12
+    WRONG_NODE               = 12,
+    CHARACTER_NOT_FIND       = 13,
+    SYNTAX_ERROR             = 14
 };
 
 enum Type_dump {
@@ -76,9 +76,13 @@ enum Type_dump {
 };
 
 
-Tree_status TreeCtor(Tree* tree, const_type_t* info, const char* dump_filename, const char* directory, const char* name_file_with_tree);
+Tree_status TreeCtor(Tree* tree, const char* dump_filename, const char* directory);
 
-Tree_status NodeCtor(Tree* tree, Tree_node** new_node, const_type_t* info);
+Tree_status NodeCtor(Tree* tree, Tree_node** new_node, Tree_node* parent);
+
+Tree_status CreateRoot(Tree* tree, const_type_t info);
+
+Tree_status FillNodeInfo(Tree_node* tree_node, const_type_t info);
 
 Tree_status TreeVerify(Tree* tree);
 
@@ -88,19 +92,23 @@ Tree_status OneNodeVerify(Tree* tree, Tree_node* tree_node);
 
 size_t TreeSize(Tree_node* tree_node);
 
-Tree_status NodeInsertAtTheEnd(Tree* tree, Tree_node** node, const_type_t* answer, const_type_t* question);
+Tree_status InsertTwoLeaves(Tree* tree, Tree_node** node, const_type_t answer, const_type_t question);
 
-Tree_status CreateTreeFile(Tree* tree);
+char* ReadAnswer();
+
+Tree_status CreateTreeFile(Tree* tree, const char* name_file_with_tree);
 
 void PrintTreeToFile(Tree_node* tree_node, FILE* stream);
+
+void SkipSpaces(char** buffer);
 
 Tree_status TreeDtor(Tree* tree);
 
 void NodeDtor(Tree_node* tree_node);
 
-Tree_status TreeHTMLDump(Tree* tree, int line, const char* file, Type_dump type_dump, Tree_status tree_status);
+Tree_status TreeHTMLDump(Tree* tree, Tree_node* tree_node, int line, const char* file, Type_dump type_dump, Tree_status tree_status);
 
-Tree_status GenerateGraph(Tree* tree);
+Tree_status GenerateGraph(Tree* tree, Tree_node* tree_node);
 
 void PrintNodeToDot(Tree* tree, FILE *file, Tree_node* tree_node);
 

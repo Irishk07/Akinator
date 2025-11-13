@@ -1,64 +1,94 @@
 #include <assert.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "tree.h"
 
 
-Tree_status TreeCtor(Tree* tree, const_type_t* info, 
-                    const char* dump_filename, const char* directory, const char* name_file_with_tree) {
+Tree_status TreeCtor(Tree* tree, const char* dump_filename, const char* directory) {
     assert(tree);
     assert(dump_filename);
     assert(directory);
 
     tree->size = 0;
 
-    tree->root = NULL;
-    TREE_CHECK_AND_RETURN_ERRORS(NodeCtor(tree, &tree->root, info));
-
-    tree->root->left_node  = NULL;
-    tree->root->right_node = NULL;
-    tree->root->parent     = NULL;
-
-    tree->Dump_Info.directory = directory;
+    tree->dump_info.directory = directory;
 
     FILE* dump_file = fopen(dump_filename, "w");
     if (dump_file == NULL)
         TREE_CHECK_AND_RETURN_ERRORS(OPEN_ERROR,    free(tree->root));
 
-    tree->Dump_Info.dump_file = dump_file;
-
-    tree->name_file_with_tree = name_file_with_tree;
+    tree->dump_info.dump_file = dump_file;
 
     return SUCCESS;
 }
 
-Tree_status NodeCtor(Tree* tree, Tree_node** new_node, const_type_t* info) {
+Tree_status NodeCtor(Tree* tree, Tree_node** new_node, Tree_node* parent) { // TODO assert
+    assert(tree);
     assert(new_node);
 
     *new_node = (Tree_node*)calloc(1, sizeof(Tree_node));
     if (*new_node == NULL)
         TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
 
-    if ((*new_node)->info != NULL)
-        free((*new_node)->info);
-
-    (*new_node)->info = strdup(info);
-
     (*new_node)->left_node = NULL;
     (*new_node)->right_node = NULL;
 
-    (*new_node)->parent = tree->root;
+    (*new_node)->parent = parent;
 
     tree->size++;
 
     return SUCCESS;
 }
 
-Tree_status TreeVerify(Tree* tree) {
-    if (tree == NULL) TREE_DUMP_AND_RETURN_ERRORS(NULL_POINTER_ON_TREE);
+Tree_status CreateRoot(Tree* tree, const_type_t info) {
+    assert(tree);
+    assert(info);
 
-    if (tree->size != TreeSize(tree->root)) TREE_DUMP_AND_RETURN_ERRORS(WRONG_SIZE);
+    tree->root = NULL;
+    TREE_CHECK_AND_RETURN_ERRORS(NodeCtor(tree, &tree->root, NULL));
+    FillNodeInfo(tree->root, info);
+
+    tree->root->left_node  = NULL;
+    tree->root->right_node = NULL;
+    tree->root->parent     = NULL;
+
+    return SUCCESS;
+}
+
+Tree_status FillNodeInfo(Tree_node* tree_node, const_type_t info) {
+    assert(tree_node);
+    assert(info);
+
+    if (tree_node->info != NULL)
+        free(tree_node->info);
+
+    tree_node->info = strdup(info);
+
+    if (tree_node->info == NULL)
+        TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
+
+            // another variant
+            // type_t new_info = (type_t)calloc(strlen(question) + 2, sizeof(char));
+            // if (new_info == NULL) 
+            //     TREE_CHECK_AND_RETURN_ERRORS(NOT_ENOUGH_MEMORY);
+        
+            // if ((*node)->info != NULL)
+            //     free((*node)->info);
+        
+            // strcpy(new_info, question);
+            // (*node)->info = new_info;
+
+    return SUCCESS;
+}
+
+Tree_status TreeVerify(Tree* tree) {
+    if (tree == NULL)
+        TREE_DUMP_AND_RETURN_ERRORS(NULL_POINTER_ON_TREE);
+
+    if (tree->size != TreeSize(tree->root))
+        TREE_DUMP_AND_RETURN_ERRORS(WRONG_SIZE);
 
     TREE_DUMP_AND_RETURN_ERRORS(AllNodesVerify(tree, tree->root));
 
@@ -66,7 +96,8 @@ Tree_status TreeVerify(Tree* tree) {
 }
 
 Tree_status AllNodesVerify(Tree* tree, Tree_node* tree_node) {
-    if (tree_node == NULL) return SUCCESS;
+    if (tree_node == NULL)
+        return SUCCESS;
 
     TREE_CHECK_AND_RETURN_ERRORS(OneNodeVerify(tree, tree_node));
 
@@ -101,39 +132,45 @@ size_t TreeSize(Tree_node* tree_node) {
     return 1 + TreeSize(tree_node->left_node) + TreeSize(tree_node->right_node);
 }
 
-Tree_status NodeInsertAtTheEnd(Tree* tree, Tree_node** node, const_type_t* answer, const_type_t* question) {
+Tree_status InsertTwoLeaves(Tree* tree, Tree_node** node, const_type_t answer, const_type_t question) { // const_type_t
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(tree));
 
     Tree_node* left_new_node = NULL;
-    TREE_CHECK_AND_RETURN_ERRORS(NodeCtor(tree, &left_new_node, answer));
+    TREE_CHECK_AND_RETURN_ERRORS(NodeCtor(tree, &left_new_node, *node));
+    TREE_CHECK_AND_RETURN_ERRORS(FillNodeInfo(left_new_node, answer));
 
     Tree_node* right_new_node = NULL;
-    TREE_CHECK_AND_RETURN_ERRORS(NodeCtor(tree, &right_new_node, (*node)->info));
+    TREE_CHECK_AND_RETURN_ERRORS(NodeCtor(tree, &right_new_node, *node));
+    TREE_CHECK_AND_RETURN_ERRORS(FillNodeInfo(right_new_node, (*node)->info));
 
     (*node)->left_node  = left_new_node;
     (*node)->right_node = right_new_node;
 
-    left_new_node->parent  = *node;
-    right_new_node->parent = *node;
+    TREE_CHECK_AND_RETURN_ERRORS(FillNodeInfo(*node, question));
 
-    if ((*node)->info != NULL)
-        free((*node)->info);
-
-    (*node)->info = strdup(question);
-
-    TREE_CHECK_AND_RETURN_ERRORS(TreeHTMLDump(tree, DUMP_INFO, NOT_ERROR_DUMP));
+    TREE_CHECK_AND_RETURN_ERRORS(TreeHTMLDump(tree, tree->root, DUMP_INFO, NOT_ERROR_DUMP));
 
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(tree));
 
     return SUCCESS;
 }
 
-Tree_status CreateTreeFile(Tree* tree) {
-    FILE* file = fopen(tree->name_file_with_tree, "w");
+char* ReadAnswer() {
+    char* answer = NULL;
+    size_t size_buf = 0;
+
+    if (getline(&answer, &size_buf, stdin) == -1)
+        return NULL;
+
+    answer[strlen(answer) - 1] = '\0';
+
+    return answer;
+}
+
+Tree_status CreateTreeFile(Tree* tree, const char* name_file_with_tree) {
+    FILE* file = fopen(name_file_with_tree, "w");
     if (file == NULL)
         TREE_CHECK_AND_RETURN_ERRORS(OPEN_ERROR);
-
-    fprintf(file, "Your tree is:\n");
 
     PrintTreeToFile(tree->root, file);
 
@@ -149,7 +186,7 @@ void PrintTreeToFile(Tree_node* tree_node, FILE* stream) {
         return;
     }
     
-    fprintf(stream, "(%s ", tree_node->info);
+    fprintf(stream, "(\"%s\" ", tree_node->info);
 
     PrintTreeToFile(tree_node->left_node, stream);
     fprintf(stream, " ");
@@ -158,18 +195,23 @@ void PrintTreeToFile(Tree_node* tree_node, FILE* stream) {
     fprintf(stream, ")");
 }
 
+void SkipSpaces(char** buffer) {
+    while (isspace(**buffer))
+        (*buffer)++;
+}
+
 Tree_status TreeDtor(Tree* tree) {
     Tree_status status = TreeVerify(tree);
 
     NodeDtor(tree->root);
     tree->root = NULL;
 
-    if (fclose(tree->Dump_Info.dump_file) == EOF) {
+    if (fclose(tree->dump_info.dump_file) == EOF) {
         status = CLOSE_ERROR;
         perror("Error is: ");
     }
 
-    tree->Dump_Info.dump_file = NULL;
+    tree->dump_info.dump_file = NULL;
 
     tree->size = 0;
 
@@ -190,50 +232,50 @@ void NodeDtor(Tree_node* tree_node) {
     free(tree_node);
 }
 
-Tree_status TreeHTMLDump(Tree* tree, int line, const char* file, Type_dump type_dump, Tree_status tree_status) {
-    fprintf(tree->Dump_Info.dump_file, "<pre> <font size = \"8\">\n");
+Tree_status TreeHTMLDump(Tree* tree, Tree_node* tree_node, int line, const char* file, Type_dump type_dump, Tree_status tree_status) {
+    fprintf(tree->dump_info.dump_file, "<pre> <font size = \"8\">\n");
 
     if (type_dump == USUAL_DUMP)
-        fprintf(tree->Dump_Info.dump_file, "<h3> DUMP <font color = green> Tree </font> </h3>\n");
+        fprintf(tree->dump_info.dump_file, "<h3> DUMP <font color = green> Tree </font> </h3>\n");
     
     if (type_dump == ERROR_DUMP) {
-        fprintf(tree->Dump_Info.dump_file, "<h3> ERROR DUMP <font color = red> Tree </font> </h3>\n");
+        fprintf(tree->dump_info.dump_file, "<h3> ERROR DUMP <font color = red> Tree </font> </h3>\n");
 
-        PrintErrors(tree_status, tree->Dump_Info.dump_file);
+        PrintErrors(tree_status, tree->dump_info.dump_file);
 
         if (tree_status == NULL_POINTER_ON_TREE ||
             tree_status == NULL_POINTER_ON_NODE)
             return tree_status;
     }
 
-    fprintf(tree->Dump_Info.dump_file, "Tree {%s: %d}\n", file, line);
+    fprintf(tree->dump_info.dump_file, "Tree {%s: %d}\n", file, line);
 
-    fprintf(tree->Dump_Info.dump_file, "Size: %zu\n", tree->size);
+    fprintf(tree->dump_info.dump_file, "Size: %zu\n", tree->size);
 
-    fprintf(tree->Dump_Info.dump_file, "Root: %p\n", tree->root);
+    fprintf(tree->dump_info.dump_file, "Root: %p\n", tree->root);
 
-    TREE_CHECK_AND_RETURN_ERRORS(GenerateGraph(tree));
+    TREE_CHECK_AND_RETURN_ERRORS(GenerateGraph(tree, tree_node));
 
     char command[MAX_LEN_NAME] = {};
     snprintf(command, MAX_LEN_NAME, "dot %s/graphes/graph%d.txt -T png -o %s/images/image%d.png", 
-                                     tree->Dump_Info.directory, tree->Dump_Info.num_dump, tree->Dump_Info.directory, tree->Dump_Info.num_dump);
+                                     tree->dump_info.directory, tree->dump_info.num_dump, tree->dump_info.directory, tree->dump_info.num_dump);
     
     if (system((const char*)command) != 0)
-        TREE_CHECK_AND_RETURN_ERRORS(EXECUTION_FAILED,      fprintf(tree->Dump_Info.dump_file, "Error with create image:(\n"));
+        TREE_CHECK_AND_RETURN_ERRORS(EXECUTION_FAILED,      fprintf(tree->dump_info.dump_file, "Error with create image:(\n"));
 
-    fprintf(tree->Dump_Info.dump_file, "\n");
-    fprintf(tree->Dump_Info.dump_file, "<img src = %s/images/image%d.png width = 700px>", tree->Dump_Info.directory, tree->Dump_Info.num_dump);
+    fprintf(tree->dump_info.dump_file, "\n");
+    fprintf(tree->dump_info.dump_file, "<img src = %s/images/image%d.png width = 700px>", tree->dump_info.directory, tree->dump_info.num_dump);
 
-    fprintf(tree->Dump_Info.dump_file, "\n\n");
+    fprintf(tree->dump_info.dump_file, "\n\n");
 
-    tree->Dump_Info.num_dump++;
+    tree->dump_info.num_dump++;
 
     return SUCCESS;
 }
 
-Tree_status GenerateGraph(Tree* tree) {
+Tree_status GenerateGraph(Tree* tree, Tree_node* tree_node) {
     char filename_graph[MAX_LEN_NAME] = {};
-    snprintf(filename_graph, MAX_LEN_NAME, "%s/graphes/graph%d.txt", tree->Dump_Info.directory, tree->Dump_Info.num_dump);
+    snprintf(filename_graph, MAX_LEN_NAME, "%s/graphes/graph%d.txt", tree->dump_info.directory, tree->dump_info.num_dump);
 
     FILE* graph = fopen(filename_graph, "w");
     if (graph == NULL)
@@ -242,8 +284,8 @@ Tree_status GenerateGraph(Tree* tree) {
     fprintf(graph, "digraph {\n");
     fprintf(graph, "    node [shape = Mrecord, style = filled, fillcolor = \"#99FF99\"];\n");
 
-    if (tree->root != NULL) {
-        PrintNodeToDot(tree, graph, tree->root);
+    if (tree_node != NULL) {
+        PrintNodeToDot(tree, graph, tree_node);
     } 
     else {
         fprintf(graph, "There will be no tree\n");
