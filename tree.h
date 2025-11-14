@@ -3,21 +3,14 @@
 
 #include <stdio.h>
 
-#define TREE_CHECK_AND_RETURN_ERRORS(error, ...)                        \
-        {                                                               \
-            Tree_status now_error = error;                              \
-            if (now_error != SUCCESS) {                                 \
-                fprintf(stderr, "Error is: %d, %d\n", error, __LINE__); \
-                __VA_ARGS__;                                            \
-                return now_error;                                       \
-            }                                                           \
-        }
+#include "common.h"
 
-#define TREE_DUMP_AND_RETURN_ERRORS(error, ...)                            \
+
+#define TREE_DUMP_AND_RETURN_ERRORS(error, ...)                                  \
         {                                                                        \
             Tree_status now_error = error;                                       \
             if (now_error != SUCCESS) {                                          \
-                TreeHTMLDump(tree, tree->root, DUMP_INFO, ERROR_DUMP, now_error); \
+                TreeHTMLDump(tree, tree->root, DUMP_INFO, ERROR_DUMP, now_error);\
                 return now_error;                                                \
             }                                                                    \
         }
@@ -26,50 +19,9 @@
 #define NOT_ERROR_DUMP USUAL_DUMP, SUCCESS
 
 
-typedef char* type_t;
-typedef const char* const_type_t;
-
 const int MAX_LEN_NAME = 100;
 const int LEN_NIL      = 3;
 
-struct Tree_node {
-    type_t info;
-    Tree_node* left_node;
-    Tree_node* right_node;
-    Tree_node* parent;
-};
-
-struct Dump_information {
-    FILE* dump_file;
-    const char* directory;
-    int num_dump = 0;
-};
-
-struct Tree {
-    Tree_node* root;
-    size_t size;
-    Dump_information dump_info;
-};
-
-
-enum Tree_status {
-    SUCCESS                  = 0,
-    MEMORY_ERROR             = 1,
-    OPEN_ERROR               = 2,
-    EXECUTION_FAILED         = 3,
-    CLOSE_ERROR              = 4,
-    WRONG_SITUATION          = 5,
-    READ_ERROR               = 6,
-    NULL_POINTER_ON_TREE     = 7,
-    WRONG_SIZE               = 8,
-    NULL_POINTER_ON_NODE     = 9,
-    PARENT_AND_CHILD_UNEQUAL = 10,
-    WRONG_ROOT               = 11,
-    WRONG_NODE               = 12,
-    CHARACTER_NOT_FIND       = 13,
-    SYNTAX_ERROR             = 14,
-    BUFFER_OVERFLOW          = 15
-};
 
 enum Type_dump {
     USUAL_DUMP = 0,

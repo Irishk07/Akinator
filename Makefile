@@ -15,7 +15,7 @@ null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,
 
 CPPFLAGS += $(SANITIZER_FLAGS)
 
-CPPSRC := main.cpp tree.cpp Akinator.cpp stack.cpp check_errors.cpp string_functions.cpp
+CPPSRC := main.cpp tree.cpp Akinator.cpp stack.cpp check_errors.cpp string_functions.cpp onegin.cpp
 
 CPPOBJ := $(CPPSRC:%.cpp=build/%.o) 
 

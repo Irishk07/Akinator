@@ -5,6 +5,8 @@
 
 #include "tree.h"
 
+#include "common.h"
+
 
 Tree_status TreeCtor(Tree* tree, const char* dump_filename, const char* directory) {
     assert(tree);

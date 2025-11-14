@@ -1,6 +1,7 @@
 #ifndef AKINATOR_H_
 #define AKINATOR_H_
 
+#include "common.h"
 #include "tree.h"
 #include "stack.h"
 
@@ -28,15 +29,6 @@ enum type_options {
 enum type_path {
     LEFT  = 0,
     RIGHT = 1,
-};
-
-
-struct Akinator {
-    Tree tree;
-    Dump_information dump_info;
-    char* begin_buffer;
-    char* end_buffer;
-    size_t size_buffer;
 };
 
 

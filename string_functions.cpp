@@ -8,10 +8,8 @@
 
 
 void* my_recalloc(void* ptr, size_t new_size, size_t old_size) {
-    assert(ptr);
     assert(new_size > 0);
     assert(new_size < MAX_CAPACITY);
-    assert(old_size > 0);
     assert(old_size < MAX_CAPACITY);
 
     char* temp = (char*)realloc(ptr, new_size);

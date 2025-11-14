@@ -7,6 +7,8 @@
 #include "Akinator.h"
 
 #include "colors.h"
+#include "common.h"
+#include "onegin.h"
 #include "tree.h"
 #include "stack.h"
 
@@ -192,29 +194,24 @@ Tree_status PathToCharacter(Akinator* akinator) {
 
     size_t cnt_connecting_words = sizeof(connecting_words) / sizeof(connecting_words[0]);
 
-    color_printf(COLOR_GREEN, " --- %s:", character);
+    color_printf(COLOR_GREEN, " --- %s: ", character);
     
     Tree_node* cur_node = akinator->tree.root;
-    if (stack.data[0] == LEFT)
-        color_printf(COLOR_GREEN, " %s", cur_node->info);
-    else
-        color_printf(COLOR_GREEN, "Not %s", cur_node->info);
 
-    MoveToNextNode(&stack, 0, &cur_node);
-
-    for (size_t i = 1; i < stack.size; ++i) {
+    for (size_t i = 0; i < stack.size - 1; ++i) {
         size_t num_of_word = (size_t)rand() % cnt_connecting_words;
 
-        color_printf(COLOR_GREEN, ", %s", connecting_words[num_of_word]);
+        PrintCurNode(&stack, i, cur_node);
 
-        if (stack.data[i] == LEFT)
-            color_printf(COLOR_GREEN, " %s", cur_node->info);
-        else if (stack.data[i] == RIGHT)
-            color_printf(COLOR_GREEN, " Not %s", cur_node->info);
+        color_printf(COLOR_GREEN, "%s ", connecting_words[num_of_word]);
 
         MoveToNextNode(&stack, i, &cur_node);
     }
-    color_printf(COLOR_GREEN, "\n");
+    // printf last sign, without common
+    if (stack.data[stack.size - 1] == LEFT)
+        color_printf(COLOR_GREEN, "%s\n", cur_node->info);
+    else
+        color_printf(COLOR_GREEN, "Not %s\n", cur_node->info);
 
     StackDtor(&stack);
 
@@ -298,24 +295,29 @@ Tree_status CompareTwoCharacters(Akinator* akinator) {
     }
     printf("\n");
 
-    fprintf(stderr, "%zu\n", cur_size);
-
     Tree_node* cur_node_first = cur_node;
     Tree_node* cur_node_second = cur_node;
 
     color_printf(COLOR_GREEN, " - Now you can see diffrent signs:\n");
+
     color_printf(COLOR_GREEN, " - First character has such signs: ");
-    for (size_t i = cur_size; i < first_stack.size; ++i) {
+
+    color_printf(COLOR_GREEN, "%s, ", cur_node_first->info);
+    MoveToNextNode(&first_stack, cur_size, &cur_node_first);
+
+    for (size_t i = cur_size + 1; i < first_stack.size; ++i) {
         PrintCurNode(&first_stack, i, cur_node_first);
 
         MoveToNextNode(&first_stack, i, &cur_node_first);
     }
     printf("\n");
 
-    fprintf(stderr, "%zu\n", cur_size);
-
     color_printf(COLOR_GREEN, " - Second character has such signs: ");
-    for (size_t i = cur_size; i < second_stack.size; ++i) {
+
+    color_printf(COLOR_GREEN, "%s, ", cur_node_second->info);
+    MoveToNextNode(&second_stack, cur_size, &cur_node_second);
+
+    for (size_t i = cur_size + 1; i < second_stack.size; ++i) {
         PrintCurNode(&second_stack, i, cur_node_second);
 
         MoveToNextNode(&second_stack, i, &cur_node_second);
@@ -397,24 +399,15 @@ Tree_status UploadTree(Akinator* akinator) {
 Tree_status ReadTree(Akinator* akinator, const char* file_with_tree) {
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree));
 
-    FILE* file = fopen(file_with_tree, "r");
-    if (file == NULL) {
-        TREE_CHECK_AND_RETURN_ERRORS(OPEN_ERROR);
-    }
+    TREE_CHECK_AND_RETURN_ERRORS(ReadOnegin(akinator, file_with_tree));
 
-    char* new_tree = NULL;
-    size_t buffer_size = 0;
-    ssize_t res = getline(&new_tree, &buffer_size, file);
-    if (res == -1) {
-        TREE_CHECK_AND_RETURN_ERRORS(READ_ERROR);
-    }
-
-    akinator->size_buffer  = (size_t)res;
-    akinator->begin_buffer = new_tree;
+    akinator->begin_buffer = akinator->buffer_with_tree;
     akinator->end_buffer   = akinator->begin_buffer + akinator->size_buffer;
 
     akinator->tree.root = NULL;
-    TREE_CHECK_AND_RETURN_ERRORS(ReadNode(akinator, &akinator->tree.root, &new_tree, NULL));
+    TREE_CHECK_AND_RETURN_ERRORS(ReadNode(akinator, &akinator->tree.root, &akinator->buffer_with_tree, NULL));
+
+    TREE_CHECK_AND_RETURN_ERRORS(TreeHTMLDump(&akinator->tree, akinator->tree.root, DUMP_INFO, NOT_ERROR_DUMP));
 
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree));
 
@@ -433,34 +426,34 @@ Tree_status ReadNode(Akinator* akinator, Tree_node** tree_node, char** current_p
 
     if (**current_pos == '(') {
         NodeCtor(&akinator->tree, tree_node, parent);
-        DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
+        // DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
 
         (*current_pos)++;
-        DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
+        // DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
 
         int read_bytes = 0;
         sscanf(*current_pos, "\"%*[^\"]\"%n", &read_bytes);
         *(*current_pos + read_bytes - 1) = '\0'; // close " -> '\0'
 
         FillNodeInfo(*tree_node, *current_pos + 1); // ++ because skip "
-        DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
+        // DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
 
         *current_pos += read_bytes;
-        DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
+        // DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
 
         TREE_CHECK_AND_RETURN_ERRORS(ReadNode(akinator, &(*tree_node)->left_node, current_pos, *tree_node));
 
         TREE_CHECK_AND_RETURN_ERRORS(ReadNode(akinator, &(*tree_node)->right_node, current_pos, *tree_node));
 
         (*current_pos)++; // ++ because skip ')'
-        DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
+        // DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
 
         SkipSpaces(current_pos);
     }
 
     else if (strncmp(*current_pos, "nil", LEN_NIL) == 0) {
         *current_pos += LEN_NIL;
-        DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
+        // DUMP_CURRENT_SITUATION(akinator->tree, *tree_node, current_pos);
 
         *tree_node = NULL;
     }
