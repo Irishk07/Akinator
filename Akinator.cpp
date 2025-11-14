@@ -260,15 +260,15 @@ Tree_status PathToCharacter(Akinator* akinator) {
 
         color_printf(COLOR_GREEN, "%s ", connecting_words[num_of_word]);
 
-        MoveToNextNode(&stack, i, &cur_node);
+        TREE_CHECK_AND_RETURN_ERRORS(MoveToNextNode(&stack, i, &cur_node));
     }
     // printf last sign, without common
-    if (stack.data[stack.size - 1] == LEFT)
+    if (stack.data[stack.size - 1] == LEFT_NODE)
         color_printf(COLOR_GREEN, "%s\n", cur_node->info);
     else
         color_printf(COLOR_GREEN, "Not %s\n", cur_node->info);
 
-    StackDtor(&stack);
+    TREE_STACK_CHECK_AND_RETURN_ERRORS(StackDtor(&stack));
 
     free(character);
 
@@ -296,7 +296,7 @@ Tree_status DefinitionOfCharacter(Akinator* akinator, stack_t* stack, char** cha
     assert(character);
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(&akinator->tree));
 
-    StackCtor(stack, DEFAULT_START_CAPACITY); // FIXME check error
+    TREE_STACK_CHECK_AND_RETURN_ERRORS(StackCtor(stack, DEFAULT_START_CAPACITY));
 
     if (FindCharacter(stack, akinator->tree.root, *character) == NULL)
         return CHARACTER_NOT_FIND;
@@ -317,7 +317,7 @@ Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character)
         return tree_node;
 
     Tree_node* result = NULL;
-    StackPush(stack, LEFT);
+    StackPush(stack, LEFT_NODE);
     if (tree_node->left_node)
         result = FindCharacter(stack, tree_node->left_node, character);
 
@@ -325,7 +325,7 @@ Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character)
         return result;
     StackPop(stack, NULL);
 
-    StackPush(stack, RIGHT);
+    StackPush(stack, RIGHT_NODE);
     if (tree_node->right_node)
         result = FindCharacter(stack, tree_node->right_node, character);
 
@@ -351,7 +351,7 @@ Tree_status CompareTwoCharacters(Akinator* akinator) {
 
     color_printf(COLOR_GREEN, " - Now you can see common signs of %s and %s: ", first_character, second_character);
 
-    size_t both_size = (first_stack.size < second_stack.size) ? first_stack.size : second_stack.size; // TODO function min
+    size_t both_size = MinSize_t(first_stack.size, second_stack.size);
     size_t cur_size = 0;
 
     Tree_node* cur_node = akinator->tree.root;
@@ -362,7 +362,7 @@ Tree_status CompareTwoCharacters(Akinator* akinator) {
 
         PrintCurNode(&first_stack, cur_size, cur_node);
 
-        MoveToNextNode(&first_stack, cur_size, &cur_node);
+        TREE_CHECK_AND_RETURN_ERRORS(MoveToNextNode(&first_stack, cur_size, &cur_node));
     }
     printf("\n");
 
@@ -372,13 +372,13 @@ Tree_status CompareTwoCharacters(Akinator* akinator) {
     color_printf(COLOR_GREEN, " - Now you can see diffrent signs:\n");
 
     color_printf(COLOR_GREEN, " - First character %s has such signs: ", first_character);
-    PrintDifferentSigns(cur_node_first, &first_stack, cur_size);
+    TREE_CHECK_AND_RETURN_ERRORS(PrintDifferentSigns(cur_node_first, &first_stack, cur_size));
 
     color_printf(COLOR_GREEN, " - Second character %s has such signs: ", second_character);
-    PrintDifferentSigns(cur_node_second, &second_stack, cur_size);
+    TREE_CHECK_AND_RETURN_ERRORS(PrintDifferentSigns(cur_node_second, &second_stack, cur_size));
 
-    StackDtor(&first_stack);
-    StackDtor(&second_stack);
+    TREE_STACK_CHECK_AND_RETURN_ERRORS(StackDtor(&first_stack));
+    TREE_STACK_CHECK_AND_RETURN_ERRORS(StackDtor(&second_stack));
 
     free(first_character);
     free(second_character);
@@ -388,41 +388,58 @@ Tree_status CompareTwoCharacters(Akinator* akinator) {
     return SUCCESS;
 }
 
+size_t MinSize_t(size_t first_value, size_t second_value) {
+    return (first_value < second_value) ? first_value : second_value;
+}
+
 void PrintCurNode(stack_t* stack, size_t index, Tree_node* cur_node) {
     assert(stack);
     assert(cur_node);
 
-    if (stack->data[index] == LEFT)
+    if (stack->data[index] == LEFT_NODE)
         color_printf(COLOR_GREEN, "%s, ", cur_node->info);
-    else if (stack->data[index] == RIGHT)
+    else if (stack->data[index] == RIGHT_NODE)
         color_printf(COLOR_GREEN, "Not %s, ", cur_node->info);
 }
 
-void MoveToNextNode(stack_t* stack, size_t index, Tree_node** cur_node) {
+Tree_status MoveToNextNode(stack_t* stack, size_t index, Tree_node** cur_node) {
     assert(stack);
     assert(cur_node);
     assert(*cur_node);
 
-    if (stack->data[index] == LEFT)
+    if (stack->data[index] == LEFT_NODE) {
+        if ((*cur_node)->left_node == NULL)
+            TREE_CHECK_AND_RETURN_ERRORS(NULL_POINTER_ON_LEAF);
+
         *cur_node = (*cur_node)->left_node;
-    else if (stack->data[index] == RIGHT)
+    }
+
+    else if (stack->data[index] == RIGHT_NODE) {
+        if ((*cur_node)->right_node == NULL)
+            TREE_CHECK_AND_RETURN_ERRORS(NULL_POINTER_ON_LEAF);
+
         *cur_node = (*cur_node)->right_node;
+    }
+
+    return SUCCESS;
 }
 
-void PrintDifferentSigns(Tree_node* cur_node, stack_t* stack, size_t cur_size) {
+Tree_status PrintDifferentSigns(Tree_node* cur_node, stack_t* stack, size_t cur_size) {
     assert(cur_node);
     assert(stack);
 
     for (size_t i = cur_size; i < stack->size - 1; ++i) {
         PrintCurNode(stack, i, cur_node);
 
-        MoveToNextNode(stack, i, &cur_node);
+        TREE_CHECK_AND_RETURN_ERRORS(MoveToNextNode(stack, i, &cur_node));
     }
     // printf last sign, without common
-    if (stack->data[stack->size - 1] == LEFT)
+    if (stack->data[stack->size - 1] == LEFT_NODE)
         color_printf(COLOR_GREEN, "%s\n", cur_node->info);
     else
         color_printf(COLOR_GREEN, "Not %s\n", cur_node->info);
+
+    return SUCCESS;
 }
 
 Tree_status SaveTree(Akinator* akinator) {

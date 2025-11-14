@@ -27,8 +27,8 @@ enum type_options {
 };
 
 enum type_path {
-    LEFT  = 0,
-    RIGHT = 1,
+    LEFT_NODE  = 0,
+    RIGHT_NODE = 1,
 };
 
 
@@ -63,11 +63,13 @@ Tree_node* FindCharacter(stack_t* stack, Tree_node* tree_node, type_t character)
 
 Tree_status CompareTwoCharacters(Akinator* akinator);
 
+size_t MinSize_t(size_t first_value, size_t second_value);
+
 void PrintCurNode(stack_t* stack, size_t index, Tree_node* cur_node);
 
-void MoveToNextNode(stack_t* stack, size_t index, Tree_node** cur_node);
+Tree_status MoveToNextNode(stack_t* stack, size_t index, Tree_node** cur_node);
 
-void PrintDifferentSigns(Tree_node* cur_node, stack_t* stack, size_t cur_size);
+Tree_status PrintDifferentSigns(Tree_node* cur_node, stack_t* stack, size_t cur_size);
 
 Tree_status SaveTree(Akinator* akinator);
 

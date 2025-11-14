@@ -3,13 +3,22 @@
 
 #include <stdio.h>
 
-#define TREE_CHECK_AND_RETURN_ERRORS(error, ...)                        \
+#define TREE_CHECK_AND_RETURN_ERRORS(error, ...)                          \
+        {                                                                 \
+            Tree_status now_error = (error);                              \
+            if (now_error != SUCCESS) {                                   \
+                fprintf(stderr, "Error is: %d, %d\n", (error), __LINE__); \
+                __VA_ARGS__;                                              \
+                return now_error;                                         \
+            }                                                             \
+        }
+
+#define TREE_STACK_CHECK_AND_RETURN_ERRORS(error, ...)                  \
         {                                                               \
-            Tree_status now_error = error;                              \
-            if (now_error != SUCCESS) {                                 \
-                fprintf(stderr, "Error is: %d, %d\n", error, __LINE__); \
+            type_error_t now_error = (error);                           \
+            if (now_error != STACK_SUCCESS) {                           \
                 __VA_ARGS__;                                            \
-                return now_error;                                       \
+                return STACK_ERROR;                                     \
             }                                                           \
         }
         
@@ -64,7 +73,9 @@ enum Tree_status {
     SYNTAX_ERROR             = 14,
     BUFFER_OVERFLOW          = 15,
     STAT_ERROR               = 16,
-    END_GAME                 = 17
+    END_GAME                 = 17,
+    STACK_ERROR              = 18,
+    NULL_POINTER_ON_LEAF     = 19
 };
 
 

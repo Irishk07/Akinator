@@ -6,6 +6,7 @@
 #include "tree.h"
 
 #include "common.h"
+#include "debug.h"
 
 
 Tree_status TreeCtor(Tree* tree, const char* dump_filename, const char* directory) {
@@ -26,7 +27,7 @@ Tree_status TreeCtor(Tree* tree, const char* dump_filename, const char* director
     return SUCCESS;
 }
 
-Tree_status NodeCtor(Tree* tree, Tree_node** new_node, Tree_node* parent) { // TODO assert
+Tree_status NodeCtor(Tree* tree, Tree_node** new_node, Tree_node* parent) {
     assert(tree);
     assert(new_node);
 
@@ -136,7 +137,8 @@ size_t TreeSize(Tree_node* tree_node) {
     return 1 + TreeSize(tree_node->left_node) + TreeSize(tree_node->right_node);
 }
 
-Tree_status InsertTwoLeaves(Tree* tree, Tree_node** node, const_type_t answer, const_type_t question) { // const_type_t
+Tree_status InsertTwoLeaves(Tree* tree, Tree_node** node, const_type_t answer, const_type_t question) { 
+    assert(node);
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(tree));
 
     Tree_node* left_new_node = NULL;
@@ -152,7 +154,7 @@ Tree_status InsertTwoLeaves(Tree* tree, Tree_node** node, const_type_t answer, c
 
     TREE_CHECK_AND_RETURN_ERRORS(FillNodeInfo(*node, question));
 
-    TREE_CHECK_AND_RETURN_ERRORS(TreeHTMLDump(tree, tree->root, DUMP_INFO, NOT_ERROR_DUMP));
+    ON_DEBUG(TREE_CHECK_AND_RETURN_ERRORS(TreeHTMLDump(tree, tree->root, DUMP_INFO, NOT_ERROR_DUMP)));
 
     TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(tree));
 
@@ -172,6 +174,9 @@ char* ReadAnswer() {
 }
 
 Tree_status CreateTreeFile(Tree* tree, const char* name_file_with_tree) {
+    assert(name_file_with_tree);
+    TREE_CHECK_AND_RETURN_ERRORS(TreeVerify(tree));
+
     FILE* file = fopen(name_file_with_tree, "w");
     if (file == NULL)
         TREE_CHECK_AND_RETURN_ERRORS(OPEN_ERROR);
@@ -185,6 +190,9 @@ Tree_status CreateTreeFile(Tree* tree, const char* name_file_with_tree) {
 }
 
 void PrintTreeToFile(Tree_node* tree_node, FILE* stream) {
+    assert(tree_node);
+    assert(stream);
+
     if (tree_node == NULL) {
         fprintf(stream, "nil");
         return;
@@ -200,6 +208,9 @@ void PrintTreeToFile(Tree_node* tree_node, FILE* stream) {
 }
 
 void SkipSpaces(char** buffer) {
+    assert(buffer);
+    assert(*buffer);
+
     while (isspace(**buffer) && (**buffer) != '\0')
         (*buffer)++;
 }
