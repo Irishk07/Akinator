@@ -331,7 +331,7 @@ void PrintErrors(int error, FILE* stream) {
     if (error == SUCCESS                  ) fprintf(stream, "ALL_RIGHT\n");
     if (error == NULL_POINTER_ON_TREE     ) fprintf(stream, "Null pointer on tree\n");
     if (error == NULL_POINTER_ON_NODE     ) fprintf(stream, "Null pointer on node\n");
-    if (error == MEMORY_ERROR        ) fprintf(stream, "Not enough memory\n");
+    if (error == MEMORY_ERROR             ) fprintf(stream, "Not enough memory\n");
     if (error == OPEN_ERROR               ) fprintf(stream, "Open error\n");
     if (error == CLOSE_ERROR              ) fprintf(stream, "Close error\n");
     if (error == EXECUTION_FAILED         ) fprintf(stream, "Execution failed\n");

@@ -63,7 +63,8 @@ enum Tree_status {
     CHARACTER_NOT_FIND       = 13,
     SYNTAX_ERROR             = 14,
     BUFFER_OVERFLOW          = 15,
-    STAT_ERROR               = 16
+    STAT_ERROR               = 16,
+    END_GAME                 = 17
 };
 
 
